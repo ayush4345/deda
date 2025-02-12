@@ -111,7 +111,7 @@ const SubmitDataNew: React.FC = () => {
 
   return (
     <div className="space-y-4 py-12">
-      <div className="rounded-xl h-20 border-2 mb-4 border-neutral-50 bg-[#fff5e8] bg-opacity-50 shadow-md flex justify-around items-center">
+      <div className="rounded-xl h-20 border mb-4 text-[#111827] bg-[#FFFFFF] border-[#E5E7EB] bg-opacity-50 shadow-md flex justify-around items-center">
         <div className="w-1/3 px-[2.5%] lg:px-[5%]">
           <p className="text-lg text-black font-bold">{allDataRequests.length}</p>
           <dfn>Total Data Requests</dfn>
@@ -129,15 +129,15 @@ const SubmitDataNew: React.FC = () => {
       </div>
       <Tabs defaultValue="account" className="">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="data-requests" className="data-[state=active]:text-[#F05B24]">Data Requests</TabsTrigger>
-          <TabsTrigger value="previous-submissions" className="data-[state=active]:text-[#F05B24]">Previous Submissions</TabsTrigger>
+          <TabsTrigger value="data-requests" className="data-[state=active]:text-[#2563EB]">Data Requests</TabsTrigger>
+          <TabsTrigger value="previous-submissions" className="data-[state=active]:text-[#2563EB]">Previous Submissions</TabsTrigger>
         </TabsList>
         <TabsContent value="data-requests">
-          <Card className="bg-[#fff5e8] bg-opacity-50 border-none shadow-md">
+          <Card className="bg-[#FFFFFF] border-[#E5E7EB] bg-opacity-50 border shadow-md">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xl">
+              <CardTitle className="text-xl text-[#111827]">
                 <span>Data Requests</span>
-                <Button onClick={getDataRequests} className="bg-[#F05B24] hover:bg-[#28AAE2] transition-colors p-1 h-6 ml-2">
+                <Button onClick={getDataRequests} className="bg-[#2563EB] hover:bg-[#28AAE2] transition-colors p-1 h-6 ml-2">
                   <RefreshCw size={20} className={`${loadingDataRequest ? 'animate-spin' : ''}`} />
                 </Button>
               </CardTitle>
@@ -158,11 +158,11 @@ const SubmitDataNew: React.FC = () => {
           {response && <div className="mt-4 rounded-md shadow-sm p-4">{response}</div>}
         </TabsContent>
         <TabsContent value="previous-submissions">
-          <Card className="bg-[#fff5e8] bg-opacity-50 border-none shadow-md">
+          <Card className="bg-[#FFFFFF] border-[#E5E7EB] bg-opacity-50 border shadow-md">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xl">
+              <CardTitle className="text-xl text-[#111827]">
                 <span>Your Previous Submissions</span>
-                <Button onClick={getMyDataSubmissions} className="bg-[#F05B24] hover:bg-[#28AAE2] transition-colors p-1 h-6 ml-2">
+                <Button onClick={getMyDataSubmissions} className="bg-[#2563EB] hover:bg-[#28AAE2] transition-colors p-1 h-6 ml-2">
                   <RefreshCw size={20} className={`${loadingDataSubmission ? 'animate-spin' : ''}`} />
                 </Button>
               </CardTitle>
