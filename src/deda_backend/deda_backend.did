@@ -2,22 +2,27 @@ type User = record {
   id: principal;
   balance: nat64;
   role: text;
+  name: text;
 };
 
 type DataRequest = record {
   id: nat64;
   description: text;
+  name: text;
+  tags: text;
   reward: nat64;
   creator: principal;
 };
 
 type DataSubmission = record {
   id: nat64;
-  request_id: nat64;
+  u_id: nat64;
   provider: principal;
   location: text;
+  file_size: nat64;
   verified: bool;
   verifier: opt principal;
+  is_public: bool;
 };
 
 type CleanedData = record {
@@ -27,10 +32,10 @@ type CleanedData = record {
 };
 
 service : {
-  "login": (principal, text) -> (variant { Ok: principal; Err: text });
+  "login": (principal, text, text) -> (variant { Ok: principal; Err: text });
   "get_data_requests": () -> (vec DataRequest) query;
-  "add_data_request": (text, nat64) -> (nat64);
-  "submit_data": (nat64, vec text) -> (variant { Ok: nat64; Err: text });
+  "add_data_request": (text, text, text, nat64) -> (nat64);
+  "submit_data": (nat64, vec text, nat64) -> (variant { Ok: nat64; Err: text });
   "verify_data": (principal, nat64) -> (variant { Ok: null; Err: text });
   "pay_contributors": (nat64) -> (variant { Ok: null; Err: text });
   "store_cleaned_data": (nat64, text) -> ();
@@ -40,4 +45,6 @@ service : {
   "get_my_data_requests": () -> (vec DataRequest) query;
   "get_my_submissions": () -> (vec DataSubmission) query;
   "get_submissions": () -> (vec DataSubmission) query;
+  "get_public_submissions": () -> (vec DataSubmission) query;
+  "get_user": (principal) -> (opt User) query;
 };
