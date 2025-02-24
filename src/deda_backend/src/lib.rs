@@ -5,17 +5,20 @@ use ic_stable_structures::{ memory_manager::{MemoryId, MemoryManager, VirtualMem
 use std::cell::RefCell;
 use std::borrow::Cow;
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Clone)]
 struct User {
     id: Principal,
     balance: u64,
     role: String,
+    name: String
 }
 
 #[derive(CandidType, Deserialize, Clone)]
 struct DataRequest {
     id: u64,
     description: String,
+    name: String,
+    tags: String,
     reward: u64,
     creator: Principal,
 }
@@ -23,11 +26,13 @@ struct DataRequest {
 #[derive(CandidType, Deserialize, Clone)]
 struct DataSubmission {
     id: u64,
-    request_id: u64,
+    u_id: u64,
     provider: Principal,
     location: String,
+    file_size: u64,
     verified: bool,
     verifier: Option<Principal>,
+    is_public: bool
 }
 
 #[derive(CandidType, Deserialize, Clone)]
@@ -116,8 +121,8 @@ thread_local! {
 }
 
 #[update]
-fn login(principal: Principal, role: String) -> Result<Principal, String> {
-    ic_cdk::println!("Received principal: {:?} with role: {:?}", principal, role);
+fn login(principal: Principal, role: String, name: String) -> Result<Principal, String> {
+    ic_cdk::println!("Received principal: {:?} with role: {:?} and name: {:?}", principal, role, name);
     
     if role != "User" && role != "Validator" && role != "Researcher" {
         return Err("Invalid role".to_string());
@@ -131,6 +136,7 @@ fn login(principal: Principal, role: String) -> Result<Principal, String> {
                 id: principal,
                 balance: 0,
                 role: role.clone(),
+                name
             });
         } else {
             let user = state.users.get_mut(&principal).unwrap();
@@ -164,7 +170,7 @@ fn get_my_data_requests() -> Vec<DataRequest> {
 }
 
 #[update]
-fn add_data_request(description: String, reward: u64) -> u64 {
+fn add_data_request(description: String, name: String, tags: String, reward: u64) -> u64 {
     let caller = ic_cdk::caller();
     STATE.with(|state| {
         let mut state = state.borrow_mut();
@@ -173,6 +179,8 @@ fn add_data_request(description: String, reward: u64) -> u64 {
         state.data_requests.push(DataRequest {
             id: request_id,
             description,
+            name,
+            tags,
             reward,
             creator: caller
         });
@@ -181,55 +189,54 @@ fn add_data_request(description: String, reward: u64) -> u64 {
 }
 
 #[update]
-fn submit_data(request_id: u64, data: Vec<String>) -> Result<u64, String> {
+fn submit_data(u_id: u64, data: Vec<String>, file_size: u64) -> Result<u64, String> {
     let caller = ic_cdk::caller();
     STATE.with(|state| {
         let mut state = state.borrow_mut();
-        if state.data_requests.iter().any(|r| r.id == request_id) {
-            let submission_id = state.next_submission_id;
-            state.next_submission_id += 1;
-            state.data_submissions.push(DataSubmission {
-                id: submission_id,
-                request_id,
-                provider: caller,
-                location: format!("Submission ID: {}", submission_id),
-                verified: false,
-                verifier: None,
-            });
+        let is_public = state.data_requests.iter().any(|r| r.id == u_id); 
+        let submission_id = state.next_submission_id;
+        state.next_submission_id += 1;
+        state.data_submissions.push(DataSubmission {
+            id: submission_id,
+            u_id,
+            provider: caller,
+            location: format!("Submission ID: {}", submission_id),
+            file_size,
+            verified: false,
+            verifier: None,
+            is_public
+        });
 
-            let submission_data = SubmissionData(data.clone());
-            let size = submission_data.to_bytes().len();
-            //if size > 10_000 { // Adjust limit based on memory range
-            //    return Err(format!("Data size exceeds limit: {} bytes", size));
-            //}
+        let submission_data = SubmissionData(data.clone());
+        let size = submission_data.to_bytes().len();
+        //if size > 10_000 { // Adjust limit based on memory range
+        //    return Err(format!("Data size exceeds limit: {} bytes", size));
+        //}
 
-            SUBMISSION_DATA.with(|storage| -> Result<(), String> {
-                let mut storage = storage.borrow_mut();
-                ic_cdk::println!("Inserting submission data with ID: {}", submission_id);
+        SUBMISSION_DATA.with(|storage| -> Result<(), String> {
+            let mut storage = storage.borrow_mut();
+            ic_cdk::println!("Inserting submission data with ID: {}", submission_id);
 
-                match storage.insert(submission_id, submission_data) {
-                    Some(existing_data) => {
-                        ic_cdk::println!("Overwriting existing data: {:?}", existing_data);
-                        Ok(()) // Return success when overwriting
-                    }
-                    None => {
-                        ic_cdk::println!("Inserted new submission data");
-                        Ok(()) // Return success when inserting new data
-                    }
+            match storage.insert(submission_id, submission_data) {
+                Some(existing_data) => {
+                    ic_cdk::println!("Overwriting existing data: {:?}", existing_data);
+                    Ok(()) // Return success when overwriting
                 }
-            })?;
+                None => {
+                    ic_cdk::println!("Inserted new submission data");
+                    Ok(()) // Return success when inserting new data
+                }
+            }
+        })?;
 
-            ic_cdk::println!(
-                "Data submitted by {:?} for request_id: {} with submission_id: {}",
-                caller,
-                request_id,
-                submission_id
-            );
-            Ok(submission_id)
+        ic_cdk::println!(
+            "Data submitted by {:?} for request_id: {} with submission_id: {}",
+            caller,
+            u_id,
+            submission_id
+        );
+        Ok(submission_id)
             
-        } else {
-            Err("Request ID not found".to_string())
-        }
     })
 }
 
@@ -272,13 +279,27 @@ fn get_submissions() -> Vec<DataSubmission> {
     STATE.with(|state| state.borrow().data_submissions.clone())
 }
 
+#[query]
+fn get_public_submissions() -> Vec<DataSubmission> {
+    STATE.with(|state| {
+        state
+            .borrow()
+            .data_submissions
+            .iter()
+            .filter(|submission| submission.is_public) // ✅ Filter for public submissions
+            .cloned() // ✅ Clone the filtered submissions
+            .collect() // ✅ Collect them into a Vec
+    })
+}
+
+
 #[update]
 fn pay_contributors(submission_id: u64) -> Result<(), String> {
     let (provider_principal, verifier_principal, provider_reward, verifier_reward) = STATE.with(|state| {
         let state = state.borrow();
         
         if let Some(submission) = state.data_submissions.iter().find(|s| s.id == submission_id && s.verified) {
-            if let Some(request) = state.data_requests.iter().find(|r| r.id == submission.request_id) {
+            if let Some(request) = state.data_requests.iter().find(|r| r.id == submission.u_id) {
                 let provider_reward = request.reward / 2;
                 let verifier_reward = request.reward / 2;
                 Ok((submission.provider, submission.verifier, provider_reward, verifier_reward))
@@ -376,4 +397,16 @@ fn get_balance(user: Principal) -> u64 {
     });
     ic_cdk::println!("Retrieved balance: {:?}", balance);
     balance
+}
+
+#[query]
+fn get_user(user_principal: Principal) -> Option<User> {
+    STATE.with(|state| {
+        let state = state.borrow();
+
+        state
+            .users
+            .get(&user_principal)
+            .cloned()
+    })
 }
