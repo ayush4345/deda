@@ -127,7 +127,7 @@ const SubmitDataNew: React.FC = () => {
           <dfn>Your Data Submission</dfn>
         </div>
       </div>
-      <Tabs defaultValue="account" className="">
+      <Tabs defaultValue="data-requests" className="">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="data-requests" className="data-[state=active]:text-[#2563EB]">Data Requests</TabsTrigger>
           <TabsTrigger value="previous-submissions" className="data-[state=active]:text-[#2563EB]">Previous Submissions</TabsTrigger>

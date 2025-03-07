@@ -20,25 +20,13 @@ import { Input } from "./ui/input"
 import { useRecoilValue } from 'recoil';
 import { userState } from '../state/userState';
 import { getBackend } from '../lib/getBackend'
-
-interface DataRequest {
-    id: string;
-    description: string;
-    reward: number;
-    creator: Principal;
-}
-
-type DataSubmission = {
-    id: bigint;
-    location: string;
-    provider: Principal;
-    request_id: bigint;
-    verified: boolean;
-};
+import { DataRequest, DataSubmission } from "../types";
 
 const ResearcherDashboard: React.FC = () => {
 
     const [description, setDescription] = useState<string>('');
+    const [name, setName] = useState<string>('');
+    const [tags, setTags] = useState<string>('');
     const [reward, setReward] = useState<string>('');
     const [response, setResponse] = useState<string>('');
     const [myDataRequests, setMyDataRequests] = useState<DataRequest[]>([]);
@@ -59,7 +47,7 @@ const ResearcherDashboard: React.FC = () => {
                 console.error('Error fetching backend:', error);
             }
         };
-    
+
         fetchBackend();
     }, []);
 
@@ -67,8 +55,8 @@ const ResearcherDashboard: React.FC = () => {
         e.preventDefault();
         try {
             setLoadingDataSubmission(true)
-            
-            const requestId = await backend.add_data_request(description, BigInt(reward));
+
+            const requestId = await backend.add_data_request(description, name, tags, BigInt(reward));
             console.log(requestId);
             setResponse(`Data request added successfully with ID: ${requestId}`);
             getMyDataRequests();
@@ -172,16 +160,30 @@ const ResearcherDashboard: React.FC = () => {
                         </CardHeader>
                         <CardContent>
                             <form className="space-y-4 bg-grey">
+                                <Input
+                                    placeholder="Name"
+                                    type="text"
+                                    className="bg-grey bg-opacity-10 border-0 border-b-2 border-black"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
                                 <Textarea
                                     placeholder="Description"
-                                    className="bg-grey bg-opacity-10 border-none"
+                                    className="bg-grey bg-opacity-10 border-0 border-b-2 border-black"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                 />
                                 <Input
+                                    placeholder="Tags (comma separated)"
+                                    type="text"
+                                    className="bg-grey bg-opacity-10 border-0 border-b-2 border-black"
+                                    value={tags}
+                                    onChange={(e) => setTags(e.target.value)}
+                                />
+                                <Input
                                     placeholder="Reward Amount (ICP)"
                                     type="number"
-                                    className="bg-grey bg-opacity-10 border-none"
+                                    className="bg-grey bg-opacity-10 border-0 border-b-2 border-black"
                                     value={reward}
                                     onChange={(e) => setReward(e.target.value)}
                                 />

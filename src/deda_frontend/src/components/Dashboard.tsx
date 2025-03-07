@@ -26,17 +26,17 @@ import {
 const items = [
     {
         title: "Public Dataset",
-        url: "#",
+        url: "/dashboard/public",
         icon: Globe,
     },
     {
         title: "Request Data",
-        url: "#",
+        url: "/dashboard",
         icon: SquarePen,
     },
     {
         title: "Submit Data",
-        url: "#",
+        url: "/dashboard",
         icon: Send,
     },
 ]
@@ -61,7 +61,7 @@ const Dashboard: React.FC = () => {
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 {items.map((item) => (
-                                    <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuItem className={user.role === 'Researcher' && item.title === 'Submit Data' ||user.role === 'User' && item.title === 'Request Data' ? 'hidden' : ''} key={item.title}>
                                         <SidebarMenuButton asChild>
                                             <a href={item.url}>
                                                 <item.icon />
@@ -94,7 +94,6 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className='relative mx-auto max-w-2xl lg:max-w-7xl '>
                     <div className='relative px-6 lg:px-8 max-w-2xl lg:max-w-7xl z-10'>
-                        <DatasetListing />
                         {user.role === 'Researcher' && <AddDataRequest />}
                         {user.role === 'User' && <SubmitDataNew />}
                         {user.role === 'Validator' && (
